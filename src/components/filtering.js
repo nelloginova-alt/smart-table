@@ -42,32 +42,35 @@ export function initFiltering(elements, indexes) {
         // Создаем модифицированное состояние для фильтрации
         const modifiedState = { ...state };
         
-        // Удаляем пустые текстовые поля из состояния
-        // чтобы они не мешали фильтрации
-        const textFields = ['seller', 'customer', 'date', 'search'];
-        textFields.forEach(field => {
-            if (modifiedState[field] === '' || 
-                modifiedState[field] === '—' || 
-                !modifiedState[field]) {
-                delete modifiedState[field];
-            }
-        });
+        // Для select'ов: заменяем "—" на пустую строку
+    if (modifiedState.seller === '—') {
+        modifiedState.seller = '';
+    }
+    if (modifiedState.customer === '—') {
+        modifiedState.customer = '';
+    }
+    
+    // Преобразуем totalFrom/totalTo в массив [from, to] для правила arrayAsRange
+    if (modifiedState.totalFrom || modifiedState.totalTo) {
+        const from = modifiedState.totalFrom ? parseFloat(modifiedState.totalFrom) : null;
+        const to = modifiedState.totalTo ? parseFloat(modifiedState.totalTo) : null;
+        modifiedState.total = [from, to];
         
-        // Преобразуем totalFrom/totalTo в массив [from, to] для правила arrayAsRange
-        if (modifiedState.totalFrom || modifiedState.totalTo) {
-            const from = modifiedState.totalFrom ? parseFloat(modifiedState.totalFrom) : null;
-            const to = modifiedState.totalTo ? parseFloat(modifiedState.totalTo) : null;
-            modifiedState.total = [from, to];
-            
-            // Удаляем исходные поля, чтобы они не мешали
-            delete modifiedState.totalFrom;
-            delete modifiedState.totalTo;
-        }
-        
-        // Для отладки
-        console.log('Filtering with modifiedState:', modifiedState);
+        // Удаляем исходные поля, чтобы они не мешали
+        delete modifiedState.totalFrom;
+        delete modifiedState.totalTo;
+    }
+    
+    // ДЛЯ ОТЛАДКИ - посмотрим что в состоянии
+    console.log('=== FILTERING DEBUG ===');
+    console.log('Original state:', state);
+    console.log('Modified state:', modifiedState);
+    console.log('First row to compare:', data[0]);
+    console.log('Compare result for first row:', compare(data[0], modifiedState));
 
-        // @todo: #4.5 — отфильтровать данные используя компаратор
-        return data.filter(row => compare(row, modifiedState));
-    };
-}
+    // @todo: #4.5 — отфильтровать данные используя компаратор
+    const filtered = data.filter(row => compare(row, modifiedState));
+    console.log('Filtered count:', filtered.length, 'of', data.length);
+    
+    return filtered;
+}}
