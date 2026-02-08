@@ -1,49 +1,45 @@
-import {getPages} from "../lib/utils.js";
+import {createComparison, defaultRules} from "../lib/compare.js";
 
-export const initPagination = ({pages, fromRow, toRow, totalRows}, createPage) => {
-    // @todo: #2.3 — подготовить шаблон кнопки для страницы и очистить контейнер
-    const pageTemplate = pages.firstElementChild.cloneNode(true);
-    pages.firstElementChild.remove();
+// @todo: #4.3 — настроить компаратор
+const compare = createComparison(defaultRules);
+
+export function initFiltering(elements, indexes) {
+    // @todo: #4.1 — заполнить выпадающие списки опциями
+    Object.keys(indexes)
+        .forEach((elementName) => {
+            elements[elementName].append(
+                ...Object.values(indexes[elementName])
+                    .map(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        return option;
+                    })
+            );
+        });
+
+    Object.keys(elements).forEach(elementName => {
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Все';
+        defaultOption.selected = true;
+        elements[elementName].prepend(defaultOption);
+    });
 
     return (data, state, action) => {
-        // @todo: #2.1 — посчитать количество страниц, объявить переменные и константы
-        const rowsPerPage = state.rowsPerPage;
-        const pageCount = Math.ceil(data.length / rowsPerPage);
-        let page = state.page;
-
-        // @todo: #2.6 — обработать действия
-        if (action) {
-            switch(action.name) {
-                case 'prev': 
-                    page = Math.max(1, page - 1); 
-                    break;
-                case 'next': 
-                    page = Math.min(pageCount, page + 1); 
-                    break;
-                case 'first': 
-                    page = 1; 
-                    break;
-                case 'last': 
-                    page = pageCount; 
-                    break;
-                // Можно добавить default, если нужно
+        // @todo: #4.2 — обработать очистку поля
+        if (action && action.name === 'clear') {
+            const field = action.dataset.field;
+            const parent = action.closest('.filter-wrapper');
+            const input = parent.querySelector('input[type="text"]');
+            
+            if (input) {
+                input.value = '';
+                state[field] = '';
             }
         }
 
-        // @todo: #2.4 — получить список видимых страниц и вывести их
-        const visiblePages = getPages(page, pageCount, 5);
-        pages.replaceChildren(...visiblePages.map(pageNumber => {
-            const el = pageTemplate.cloneNode(true);
-            return createPage(el, pageNumber, pageNumber === page);
-        }));
-
-        // @todo: #2.5 — обновить статус пагинации
-        fromRow.textContent = (page - 1) * rowsPerPage + 1;
-        toRow.textContent = Math.min((page * rowsPerPage), data.length);
-        totalRows.textContent = data.length;
-
-        // @todo: #2.2 — посчитать сколько строк нужно пропустить и получить срез данных
-        const skip = (page - 1) * rowsPerPage;
-        return data.slice(skip, skip + rowsPerPage);
+        // @todo: #4.5 — отфильтровать данные используя компаратор
+        return data.filter(row => compare(row, state));
     };
-};  // ← Точка с запятой здесь допустима
+}
