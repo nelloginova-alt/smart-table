@@ -45,12 +45,10 @@ export function initTable(settings, onAction) {
                     row.elements[key].textContent = item[key];
                 }
             })            
-            // console.log(row);
             return row.container;
         });
         root.elements.rows.replaceChildren(...nextRows);
-        // console.log(nextRows);
-    }
+    };
     
     return {...root, render};
 }

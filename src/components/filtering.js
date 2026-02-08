@@ -1,47 +1,49 @@
-import {createComparison, defaultRules} from "../lib/compare.js";
+import {getPages} from "../lib/utils.js";
 
-// @todo: #4.3 — настроить компаратор
-
-export function initFiltering(elements, indexes) {
-    // @todo: #4.1 — заполнить выпадающие списки опциями
-    Object.keys(indexes)                                    // Получаем ключи из объекта
-      .forEach((elementName) => {                        // Перебираем по именам
-        elements[elementName].append(                    // в каждый элемент добавляем опции
-            ...Object.values(indexes[elementName])        // формируем массив имён, значений опций
-                    .map(name => {                        // используйте name как значение и текстовое содержимое
-                        const option = document.createElement('option');
-                        option.value = name;
-                        option.textContent = name;
-                        return option;                                // @todo: создать и вернуть тег опции
-                    })
-                      
-        )
-     })
-
-    Object.keys(elements).forEach(elementName => {
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = 'Все'; // или 'Не выбрано', '---' и т.д.
-        defaultOption.selected = true;
-        elements[elementName].prepend(defaultOption);
-    });
-
-     
+export const initPagination = ({pages, fromRow, toRow, totalRows}, createPage) => {
+    // @todo: #2.3 — подготовить шаблон кнопки для страницы и очистить контейнер
+    const pageTemplate = pages.firstElementChild.cloneNode(true);
+    pages.firstElementChild.remove();
 
     return (data, state, action) => {
-        // @todo: #4.2 — обработать очистку поля
-        if (action && action.name === 'clear') {
-            const field = action.dataset.field; // получаем поле из data-field кнопки
-            const parent = action.closest('.filter-wrapper'); // находим родительский элемент
-            const input = parent.querySelector('input[type="text"]'); // находим input внутри
-            
-            if (input) {
-                input.value = ''; // очищаем поле ввода
-                state[field] = ''; // очищаем соответствующее поле в state
+        // @todo: #2.1 — посчитать количество страниц, объявить переменные и константы
+        const rowsPerPage = state.rowsPerPage;
+        const pageCount = Math.ceil(data.length / rowsPerPage);
+        let page = state.page;
+
+        // @todo: #2.6 — обработать действия
+        if (action) {
+            switch(action.name) {
+                case 'prev': 
+                    page = Math.max(1, page - 1); 
+                    break;
+                case 'next': 
+                    page = Math.min(pageCount, page + 1); 
+                    break;
+                case 'first': 
+                    page = 1; 
+                    break;
+                case 'last': 
+                    page = pageCount; 
+                    break;
+                // Можно добавить default, если нужно
             }
         }
 
-        // @todo: #4.5 — отфильтровать данные используя компаратор
-        return data.filter(row => compare(row, state));
-    }
-}
+        // @todo: #2.4 — получить список видимых страниц и вывести их
+        const visiblePages = getPages(page, pageCount, 5);
+        pages.replaceChildren(...visiblePages.map(pageNumber => {
+            const el = pageTemplate.cloneNode(true);
+            return createPage(el, pageNumber, pageNumber === page);
+        }));
+
+        // @todo: #2.5 — обновить статус пагинации
+        fromRow.textContent = (page - 1) * rowsPerPage + 1;
+        toRow.textContent = Math.min((page * rowsPerPage), data.length);
+        totalRows.textContent = data.length;
+
+        // @todo: #2.2 — посчитать сколько строк нужно пропустить и получить срез данных
+        const skip = (page - 1) * rowsPerPage;
+        return data.slice(skip, skip + rowsPerPage);
+    };
+};  // ← Точка с запятой здесь допустима
