@@ -39,7 +39,21 @@ export function initFiltering(elements, indexes) {
             }
         }
 
+       // Преобразуем totalFrom/totalTo в массив для arrayAsRange
+        const modifiedState = { ...state };
+        
+        // Если есть totalFrom или totalTo, создаем массив
+        if (modifiedState.totalFrom || modifiedState.totalTo) {
+            const from = modifiedState.totalFrom ? parseFloat(modifiedState.totalFrom) : null;
+            const to = modifiedState.totalTo ? parseFloat(modifiedState.totalTo) : null;
+            modifiedState.total = [from, to];
+            
+            // Удаляем исходные поля, чтобы они не мешали
+            delete modifiedState.totalFrom;
+            delete modifiedState.totalTo;
+        }
+
         // @todo: #4.5 — отфильтровать данные используя компаратор
-        return data.filter(row => compare(row, state));
+        return data.filter(row => compare(row, modifiedState));
     };
 }
