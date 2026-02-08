@@ -1,6 +1,5 @@
 import {createComparison, defaultRules} from "../lib/compare.js";
 
-// Используем стандартные правила
 const compare = createComparison(defaultRules);
 
 export function initFiltering(elements, indexes) {
@@ -26,7 +25,7 @@ export function initFiltering(elements, indexes) {
     });
 
     return (data, state, action) => {
-        // Обработка очистки поля
+        // Очистка поля
         if (action && action.name === 'clear') {
             const field = action.dataset.field;
             const parent = action.closest('.filter-wrapper');
@@ -38,32 +37,11 @@ export function initFiltering(elements, indexes) {
             }
         }
 
-        // Создаем копию состояния для модификации
-        const filterState = { ...state };
-        
-        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
-        // Если seller пустой ("" или "—") - фильтруем строки с пустым seller
-        if (filterState.seller === '' || filterState.seller === '—' || !filterState.seller) {
-            // УДАЛЯЕМ поле seller из состояния, чтобы compare его игнорировал
-            delete filterState.seller;
-            // ВРУЧНУЮ фильтруем только строки с пустым продавцом
-            return data.filter(row => {
-                const rowSeller = row.seller;
-                return !rowSeller || rowSeller === '' || rowSeller === '—';
-            });
+        if (state.seller === '' || state.seller === '—') {
+            return [];
         }
-        
-        // Преобразование totalFrom/totalTo в массив для arrayAsRange
-        if (filterState.totalFrom || filterState.totalTo) {
-            const from = filterState.totalFrom ? parseFloat(filterState.totalFrom) : null;
-            const to = filterState.totalTo ? parseFloat(filterState.totalTo) : null;
-            filterState.total = [from, to];
-            
-            delete filterState.totalFrom;
-            delete filterState.totalTo;
-        }
-        
-        // Используем компаратор для всех остальных случаев
-        return data.filter(row => compare(row, filterState));
+
+        // ПРОСТО используем compare
+        return data.filter(row => compare(row, state));
     };
 }
