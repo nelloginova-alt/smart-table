@@ -39,10 +39,21 @@ export function initFiltering(elements, indexes) {
             }
         }
 
-       // Преобразуем totalFrom/totalTo в массив для arrayAsRange
+        // Создаем модифицированное состояние для фильтрации
         const modifiedState = { ...state };
         
-        // Если есть totalFrom или totalTo, создаем массив
+        // Удаляем пустые текстовые поля из состояния
+        // чтобы они не мешали фильтрации
+        const textFields = ['seller', 'customer', 'date', 'search'];
+        textFields.forEach(field => {
+            if (modifiedState[field] === '' || 
+                modifiedState[field] === '—' || 
+                !modifiedState[field]) {
+                delete modifiedState[field];
+            }
+        });
+        
+        // Преобразуем totalFrom/totalTo в массив [from, to] для правила arrayAsRange
         if (modifiedState.totalFrom || modifiedState.totalTo) {
             const from = modifiedState.totalFrom ? parseFloat(modifiedState.totalFrom) : null;
             const to = modifiedState.totalTo ? parseFloat(modifiedState.totalTo) : null;
@@ -52,6 +63,9 @@ export function initFiltering(elements, indexes) {
             delete modifiedState.totalFrom;
             delete modifiedState.totalTo;
         }
+        
+        // Для отладки
+        console.log('Filtering with modifiedState:', modifiedState);
 
         // @todo: #4.5 — отфильтровать данные используя компаратор
         return data.filter(row => compare(row, modifiedState));

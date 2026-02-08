@@ -16,6 +16,12 @@ export function initSearching(searchField) {
 
     return (data, state, action) => {
         // @todo: #5.2 — применить компаратор
+        // Если поле поиска пустое - сразу возвращаем данные без фильтрации
+        if (!state.search || state.search.trim() === '') {
+            return data;
+        }
+        
+        console.log('Searching with term:', state.search);
         return data.filter(row => compare(row, state));
     };
 }
